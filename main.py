@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
 import os
+import requests  # NEW: For logging to Google Sheets
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -42,6 +43,7 @@ async def ask_ami(data: UserMessage):
     )
 
     try:
+        # Generate AMI's reply
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -52,7 +54,22 @@ async def ask_ami(data: UserMessage):
             max_tokens=300,
         )
 
-        return {"reply": response.choices[0].message.content.strip()}
+        reply = response.choices[0].message.content.strip()
+
+        # Log to Google Sheets (non-blocking)
+        webhook_url = "https://script.google.com/macros/s/AKfycbzrpW3Vj_Xz2UTsvlyI4B9fe1d3uIvMry5FI9DIUhTJfQFErVYxY659VYCBzu0xwh8i/exec"
+        log_payload = {
+            "role": data.role,
+            "user_id": data.user_id,
+            "message": data.message,
+            "reply": reply
+        }
+        try:
+            requests.post(webhook_url, json=log_payload, timeout=5)
+        except Exception as log_error:
+            print(f"[Logging failed] {log_error}")
+
+        return {"reply": reply}
 
     except Exception as e:
         return {"reply": f"Sorry, there was a problem: {str(e)}"}
