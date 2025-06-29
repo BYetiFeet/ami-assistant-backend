@@ -41,14 +41,21 @@ async def ask_ami(data: UserMessage):
             "Don't give medical advice. Avoid jargon. Be helpful and kind."
         )
 
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": data.message}
-            ],
-            temperature=0.6,
-            max_tokens=300,
+        from openai import OpenAI
+
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": data.message}
+    ],
+    temperature=0.6,
+    max_tokens=300,
+)
+
+return {"reply": response.choices[0].message.content.strip()}
         )
 
         return {"reply": response.choices[0].message["content"].strip()}
