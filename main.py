@@ -2,15 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
+import requests
 import os
-import requests  # NEW: For logging to Google Sheets
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 app = FastAPI()
 
-# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,11 +16,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Define the data model
 class UserMessage(BaseModel):
     message: str
     role: str
     user_id: str
+
+GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzrpW3Vj_Xz2UTsvlyI4B9fe1d3uIvMry5FI9DIUhTJfQFErVYxY659VYCBzu0xwh8i/exec"
 
 @app.post("/ask")
 async def ask_ami(data: UserMessage):
@@ -43,7 +41,7 @@ async def ask_ami(data: UserMessage):
     )
 
     try:
-        # Generate AMI's reply
+        # Generate AMI response
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -53,21 +51,18 @@ async def ask_ami(data: UserMessage):
             temperature=0.6,
             max_tokens=300,
         )
-
         reply = response.choices[0].message.content.strip()
 
-        # Log to Google Sheets (non-blocking)
-        webhook_url = "https://script.google.com/macros/s/AKfycbzrpW3Vj_Xz2UTsvlyI4B9fe1d3uIvMry5FI9DIUhTJfQFErVYxY659VYCBzu0xwh8i/exec"
-        log_payload = {
-            "role": data.role,
-            "user_id": data.user_id,
-            "message": data.message,
-            "reply": reply
-        }
+        # Log to Google Sheets
         try:
-            requests.post(webhook_url, json=log_payload, timeout=5)
-        except Exception as log_error:
-            print(f"[Logging failed] {log_error}")
+            requests.post(GOOGLE_SHEETS_URL, json={
+                "user_id": data.user_id,
+                "role": data.role,
+                "message": data.message,
+                "reply": reply
+            })
+        except Exception as log_err:
+            print(f"Logging failed: {log_err}")
 
         return {"reply": reply}
 
