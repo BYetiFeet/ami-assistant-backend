@@ -56,7 +56,6 @@ response = client.chat.completions.create(
 )
 
 return {"reply": response.choices[0].message.content.strip()}
-        )
 
         return {"reply": response.choices[0].message["content"].strip()}
 
