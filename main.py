@@ -54,10 +54,8 @@ response = client.chat.completions.create(
     temperature=0.6,
     max_tokens=300,
 )
-
 return {"reply": response.choices[0].message.content.strip()}
 
-        return {"reply": response.choices[0].message["content"].strip()}
 
     except Exception as e:
         return {"reply": f"Sorry, there was a problem: {str(e)}"}
