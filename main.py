@@ -24,6 +24,30 @@ class UserMessage(BaseModel):
 GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzrpW3Vj_Xz2UTsvlyI4B9fe1d3uIvMry5FI9DIUhTJfQFErVYxY659VYCBzu0xwh8i/exec"
 
 @app.post("/ask")
+from fastapi import Request
+import httpx
+
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrpW3Vj_Xz2UTsvlyI4B9fe1d3uIvMry5FI9DIUhTJfQFErVYxY659VYCBzu0xwh8i/exec"
+
+@app.post("/log-to-sheets")
+async def log_to_sheets(request: Request):
+    try:
+        payload = await request.json()
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                GOOGLE_SCRIPT_URL,
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            )
+
+        return {"status": "forwarded", "google_response": response.text}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+
+
 async def ask_ami(data: UserMessage):
     stakeholder_tone = {
         "client": "a warm, respectful, supportive assistant",
