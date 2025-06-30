@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from openai import OpenAI
 import os
@@ -11,7 +12,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # secure this for production
+    allow_origins=["*"],  # Secure this for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,3 +65,16 @@ async def log_to_sheets(req: Request):
         return {"status": "ok", "sheets_response": r.text}
     except Exception as e:
         return {"error": str(e)}
+
+@app.post("/submit-feedback")
+async def submit_feedback(req: Request):
+    try:
+        payload = await req.json()
+        r = requests.post(
+            "https://script.google.com/macros/s/AKfycbxNt4pS-U-jcpTV3UuI-ROsVEIs2Y2XDsqcFsKCsMWk8_Ov1yTDPZb_JKNCXZvGqReD/exec",
+            json=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        return JSONResponse(content={"status": "ok", "google_response": r.text})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
