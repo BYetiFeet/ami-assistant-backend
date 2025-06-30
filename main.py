@@ -57,7 +57,7 @@ async def log_to_sheets(req: Request):
     payload = await req.json()
     try:
         r = requests.post(
-            "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec",
+            "https://script.google.com/macros/s/AKfycbxNt4pS-U-jcpTV3UuI-ROsVEIs2Y2XDsqcFsKCsMWk8_Ov1yTDPZb_JKNCXZvGqReD/exec",
             json=payload,
             headers={"Content-Type": "application/json"}
         )
